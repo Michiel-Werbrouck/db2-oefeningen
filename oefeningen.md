@@ -555,3 +555,97 @@ UPDATE boetes SET bedrag=230 WHERE betalingsnr = 1110;
 INSERT INTO boetes VALUES (1210,2,'2017-11-06', 200);
 UPDATE boetes SET bedrag=300 WHERE betalingsnr = 1210;
 ```
+
+
+# Oefeningen op Views, Stored Procedures en Triggers
+
+## 1. 
+
+> Zoals je misschien herinnerd, kan het tellen van al de rijen soms langs duren. Dus het gebruik van de count() functie.Maak op je lokale databank een tabel met minstens 1 miljoen rijen.
+
+```sql
+CREATE TABLE items AS
+  SELECT
+    (random()*1000000)::integer AS n,
+    md5(random()::text) AS s
+  FROM
+    generate_series(1,1000000);
+```
+&rarr; doe daarna een count() op de tabel.
+
+```sql
+SELECT COUNT(*) FROM items;
+```
+
+## 2.
+
+> Maak een view waarin de rijen van deze tabel telt. Hoe kan je ervoor zorgen dat deze view niet steeds opnieuw moet worden uitgevoerd, ie de onderliggende code. 
+> Maak zo een view aan.
+
+```sql
+drop view if exists locatie;
+create view locatie as select locid as locid,
+    country as land,
+    region as regio,
+    postalcode as postcode,
+    location as locatie,
+    metrocode as metrocode,
+    areacode as netnummer
+    from location;
+```
+
+## 3.
+
+> Schrijf een trigger die bij een toevoeging of verwijdering van een rij in de tabel een teller in teltabel aanpast. Het doel van deze teltabel is het aantal rijen van een andere tabel bij te houden
+
+```sql
+CREATE OR REPLACE FUNCTION increment_count() RETURNS TRIGGER AS
+$$
+BEGIN
+  UPDATE count 
+  SET count = count + 1
+  WHERE table_name = 'items';
+  RETURN NEW;
+END;
+$$
+LANGUAGE 'plpgsql';
+```
+
+# Oefeningen op Vensters
+
+_Dit zijn oefeningen van SQLDropbox die gemaakt zijn tijdens de les of die week_
+
+## 1.
+
+> Geef per reis incrementeel de totale verblijfsduur volgens de volgorde waarin de hemelobjecten bezocht worden.
+> Geef ook de totale verblijfsduur van alle reizen om alles in perspectief te zettten.
+> Sorteer op reisnr, volgnr, objectnaam, verblijfsduur, de volgende kolommen.
+
+```sql
+SELECT r.reisnr, b.volgnr, b.objectnaam, b.verblijfsduur, SUM(b.verblijfsduur)
+OVER
+(
+        PARTITION BY r.reisnr
+        ORDER BY b.volgnr ROWS BETWEEN UNBOUNDED
+        PRECEDING AND current ROW
+) 
+AS inc_duur, (SELECT SUM(bezoeken.verblijfsduur) FROM bezoeken) AS tot_duur
+FROM reizen r
+LEFT OUTER JOIN bezoeken b USING(reisnr)
+ORDER BY 1,2,3,4,5,6
+```
+
+## 2.
+
+> Hoe lang was het geleden dat er nog een reis vertrokken was?
+> Geef daarnaast de totale reisduur per jaar incrementeel in de tijd (hier genaamd jaar_duur).
+> Sorteer op reisnr en de andere kolommen.
+
+```sql
+SELECT reisnr, LAG(reisnr) OVER w1 AS vorig_reisnr, vertrekdatum, vertrekdatum - LAG(vertrekdatum) OVER w1 AS tussen_tijd,
+reisduur, EXTRACT(YEAR FROM vertrekdatum) AS jaar, SUM(reisduur) OVER w2 AS jaar_duur
+FROM reizen
+WINDOW w1 AS (ORDER BY vertrekdatum), w2 AS (PARTITION BY EXTRACT(YEAR FROM vertrekdatum) ORDER BY vertrekdatum)
+ORDER BY 1
+```
+
