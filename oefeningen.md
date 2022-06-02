@@ -446,3 +446,206 @@ CREATE OR REPLACE FUNCTION public.kolom_overzicht ("tabel" TEXT)
 --En zo gebruik je het
 SELECT * FROM public.kolom_overzicht ('countries');
 ```
+
+# Oefeningen op Procedurele SQL Triggers
+
+## 1.
+
+> Create trigger that deletes 10 oldest fines when new fine will make total 
+number of fines raise above 50
+
+```sql
+DROP TRIGGER IF EXISTS OEF_1 ON boetes;
+DROP FUNCTION IF EXISTS Remove10OldestFines();
+DROP TRIGGER IF EXISTS OEF_2 ON boetes;
+DROP FUNCTION IF EXISTS Prevent_High_Fines();
+DROP TRIGGER IF EXISTS OEF_3 ON boetes;
+DROP FUNCTION IF EXISTS ReturnInfoOnChange();
+
+CREATE FUNCTION OR REPLACE Remove10OldestFines() RETURNS trigger AS '
+BEGIN
+	IF(SELECT COUNT(*) > 50 FROM boetes) THEN
+		DELETE FROM boetes WHERE betalingsnr IN (SELECT betalingsnr FROM boetes 
+		ORDER BY datum ASC LIMIT 10);
+	END IF;
+	RETURN NEW;
+END
+'
+LANGUAGE 'plpgsql';
+
+CREATE TRIGGER OEF_1 BEFORE INSERT ON boetes
+FOR EACH ROW EXECUTE PROCEDURE Remove10OldestFines();
+
+INSERT INTO boetes VALUES (1000,2,'2017-11-06', 100);
+INSERT INTO boetes VALUES (1001,2,'2017-11-06', 100);
+INSERT INTO boetes VALUES (1002,2,'2017-11-06', 100);
+INSERT INTO boetes VALUES (1003,2,'2017-11-06', 100);
+INSERT INTO boetes VALUES (1004,2,'2017-11-06', 100);
+INSERT INTO boetes VALUES (1005,2,'2017-11-06', 100);
+```
+
+
+## 2. 
+
+> Create trigger that prevents inserts of fines with an amount above 200 euros
+
+```sql
+DROP TRIGGER IF EXISTS OEF_1 ON boetes;
+DROP FUNCTION IF EXISTS Remove10OldestFines();
+DROP TRIGGER IF EXISTS OEF_2 ON boetes;
+DROP FUNCTION IF EXISTS Prevent_High_Fines();
+DROP TRIGGER IF EXISTS OEF_3 ON boetes;
+DROP FUNCTION IF EXISTS ReturnInfoOnChange();
+
+CREATE OR REPLACE FUNCTION Prevent_High_Fines() RETURNS trigger AS '
+BEGIN
+	RETURN null;
+END
+'
+LANGUAGE 'plpgsql';
+
+CREATE TRIGGER OEF_2 BEFORE INSERT ON boetes
+FOR EACH ROW 
+WHEN (NEW.bedrag > 200)
+EXECUTE PROCEDURE Prevent_High_Fines();
+
+INSERT INTO boetes VALUES (1010,2,'2017-11-06', 100);
+INSERT INTO boetes VALUES (1011,2,'2017-11-06', 300);
+INSERT INTO boetes VALUES (1012,2,'2017-11-06', 100);
+INSERT INTO boetes VALUES (1013,2,'2017-11-06', 400);
+INSERT INTO boetes VALUES (1014,2,'2017-11-06', 100);
+INSERT INTO boetes VALUES (1015,2,'2017-11-06', 200);
+INSERT INTO boetes VALUES (1016,2,'2017-11-06', 300);
+```
+
+## 3.
+
+> Create trigger that returns actual total amount and number of fines whenever a new fine is inserted or an existing one is updated.
+
+```sql
+DROP TRIGGER IF EXISTS OEF_1 ON boetes;
+DROP FUNCTION IF EXISTS Remove10OldestFines();
+DROP TRIGGER IF EXISTS OEF_2 ON boetes;
+DROP FUNCTION IF EXISTS Prevent_High_Fines();
+DROP TRIGGER IF EXISTS OEF_3 ON boetes;
+DROP FUNCTION IF EXISTS ReturnInfoOnChange();
+
+set client_min_messages TO notice;
+
+CREATE OR REPLACE FUNCTION ReturnInfoOnChange() RETURNS trigger AS 
+$body$
+DECLARE
+	total_amount FLOAT;
+	nfines INTEGER;
+BEGIN
+	total_amount := (SELECT sum(bedrag) FROM boetes);
+	nfines := (SELECT count(betalingsnr) FROM boetes);
+	RAISE NOTICE 'Total amount of fines: % and total number %', total_amount, nfines;
+	return new;
+END
+$body$
+LANGUAGE 'plpgsql';
+
+CREATE TRIGGER OEF_3 BEFORE INSERT OR UPDATE ON boetes
+FOR EACH ROW 
+EXECUTE PROCEDURE ReturnInfoOnChange();
+
+INSERT INTO boetes VALUES (1110,2,'2017-11-06', 100);
+UPDATE boetes SET bedrag=230 WHERE betalingsnr = 1110;
+INSERT INTO boetes VALUES (1210,2,'2017-11-06', 200);
+UPDATE boetes SET bedrag=300 WHERE betalingsnr = 1210;
+```
+
+
+# Oefeningen op Views, Stored Procedures en Triggers
+
+## 1. 
+
+> Zoals je misschien herinnerd, kan het tellen van al de rijen soms langs duren. Dus het gebruik van de count() functie.Maak op je lokale databank een tabel met minstens 1 miljoen rijen.
+
+```sql
+CREATE TABLE items AS
+  SELECT
+    (random()*1000000)::integer AS n,
+    md5(random()::text) AS s
+  FROM
+    generate_series(1,1000000);
+```
+&rarr; doe daarna een count() op de tabel.
+
+```sql
+SELECT COUNT(*) FROM items;
+```
+
+## 2.
+
+> Maak een view waarin de rijen van deze tabel telt. Hoe kan je ervoor zorgen dat deze view niet steeds opnieuw moet worden uitgevoerd, ie de onderliggende code. 
+> Maak zo een view aan.
+
+```sql
+drop view if exists locatie;
+create view locatie as select locid as locid,
+    country as land,
+    region as regio,
+    postalcode as postcode,
+    location as locatie,
+    metrocode as metrocode,
+    areacode as netnummer
+    from location;
+```
+
+## 3.
+
+> Schrijf een trigger die bij een toevoeging of verwijdering van een rij in de tabel een teller in teltabel aanpast. Het doel van deze teltabel is het aantal rijen van een andere tabel bij te houden
+
+```sql
+CREATE OR REPLACE FUNCTION increment_count() RETURNS TRIGGER AS
+$$
+BEGIN
+  UPDATE count 
+  SET count = count + 1
+  WHERE table_name = 'items';
+  RETURN NEW;
+END;
+$$
+LANGUAGE 'plpgsql';
+```
+
+# Oefeningen op Vensters
+
+_Dit zijn oefeningen van SQLDropbox die gemaakt zijn tijdens de les of die week_
+
+## 1.
+
+> Geef per reis incrementeel de totale verblijfsduur volgens de volgorde waarin de hemelobjecten bezocht worden.
+> Geef ook de totale verblijfsduur van alle reizen om alles in perspectief te zettten.
+> Sorteer op reisnr, volgnr, objectnaam, verblijfsduur, de volgende kolommen.
+
+```sql
+SELECT r.reisnr, b.volgnr, b.objectnaam, b.verblijfsduur, SUM(b.verblijfsduur)
+OVER
+(
+        PARTITION BY r.reisnr
+        ORDER BY b.volgnr ROWS BETWEEN UNBOUNDED
+        PRECEDING AND current ROW
+) 
+AS inc_duur, (SELECT SUM(bezoeken.verblijfsduur) FROM bezoeken) AS tot_duur
+FROM reizen r
+LEFT OUTER JOIN bezoeken b USING(reisnr)
+ORDER BY 1,2,3,4,5,6
+```
+
+## 2.
+
+> Hoe lang was het geleden dat er nog een reis vertrokken was?
+> Geef daarnaast de totale reisduur per jaar incrementeel in de tijd (hier genaamd jaar_duur).
+> Sorteer op reisnr en de andere kolommen.
+
+```sql
+SELECT reisnr, LAG(reisnr) OVER w1 AS vorig_reisnr, vertrekdatum, vertrekdatum - LAG(vertrekdatum) OVER w1 AS tussen_tijd,
+reisduur, EXTRACT(YEAR FROM vertrekdatum) AS jaar, SUM(reisduur) OVER w2 AS jaar_duur
+FROM reizen
+WINDOW w1 AS (ORDER BY vertrekdatum), w2 AS (PARTITION BY EXTRACT(YEAR FROM vertrekdatum) ORDER BY vertrekdatum)
+ORDER BY 1
+```
+
