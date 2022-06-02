@@ -82,7 +82,7 @@ Het geolite schema vindt je terug op 54321 -> gis -> geolite
 
 We kunnen ook gwn naar de kolommen van de tabellen in het geolite schema kijken, maar hoe kun je nee zeggen tegen een mooie ERD?
 
-![Screenshot](images/erd_geolite.PNG)
+![Screenshot](Images/erd_geolite.PNG)
 
 > Is er een verband tussen de tabellen?
 
