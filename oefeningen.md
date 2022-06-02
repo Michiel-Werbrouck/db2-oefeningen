@@ -697,7 +697,7 @@ UPDATE boetes SET bedrag=300 WHERE betalingsnr = 1210;
 
 ## 1.
 
-> Zoals je misschien herinnerd, kan het tellen van al de rijen soms langs duren. Dus het gebruik van de count() functie.Maak op je lokale databank een tabel met minstens 1 miljoen rijen.
+> Zoals je misschien herinnerd, kan het tellen van al de rijen soms langs duren. Dus het gebruik van de count() functie. Maak op je lokale databank een tabel met minstens 1 miljoen rijen.
 
 ```sql
 CREATE TABLE items AS
@@ -708,7 +708,7 @@ CREATE TABLE items AS
     generate_series(1,1000000);
 ```
 
-&rarr; doe daarna een count() op de tabel.
+Doe daarna een count() op de tabel.
 
 ```sql
 SELECT COUNT(*) FROM items;
@@ -720,15 +720,10 @@ SELECT COUNT(*) FROM items;
 > Maak zo een view aan.
 
 ```sql
-drop view if exists locatie;
-create view locatie as select locid as locid,
-    country as land,
-    region as regio,
-    postalcode as postcode,
-    location as locatie,
-    metrocode as metrocode,
-    areacode as netnummer
-    from location;
+CREATE MATERIALIZED VIEW counter
+        as
+        select count(*)
+        from items
 ```
 
 ## 3.
@@ -746,7 +741,20 @@ BEGIN
 END;
 $$
 LANGUAGE 'plpgsql';
+
+CREATE TRIGGER trigger_replace BEFORE INSERT OR DELETE ON boetes
+FOR EACH ROW EXECUTE PROCEDURE increment_count();
 ```
+
+## 4.
+
+> Welk van de 3 bovenstaande methode is het meest performant?
+>
+> -   rechstreeks tellen
+> -   view (optie 1 en 2)
+> -   teltabel (via trigger)
+
+Ik denk een trigger, want dan tel je op per insert of delete en wordt dat bijgehouden (in bv een teltabel).
 
 # Oefeningen op Vensters
 
