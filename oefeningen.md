@@ -78,8 +78,8 @@ Het geolite schema vindt je terug op 54321 -> gis -> geolite
 ### 2.1. Inleiding
 
 > Wat is de structuur van de tabellen?
-> Dit kunnen we makkelijk terugvinden door een ERD te laten genereren van de gis DB. Rechterklik -> Generate ERD.
 
+Dit kunnen we makkelijk terugvinden door een ERD te laten genereren van de gis DB. Rechterklik -> Generate ERD.
 We kunnen ook gwn naar de kolommen van de tabellen in het geolite schema kijken, maar hoe kun je nee zeggen tegen een mooie ERD?
 
 ![Screenshot](Images/erd_geolite.PNG)
@@ -367,6 +367,17 @@ Alright, with that said... let's go.
 > Schrijf een functie waarbij je gegevens uit een transactie tabel verwijdert die ouder zijn dan  
 > 10 dagen (of een andere “archiverings” functie op 1 van jou eigen tabellen).
 
+Ik denk dat dit een procedure moet zijn omdat je gegevens gaat verwijderen, maar ik vind nergens info over hoe je een row z'n leeftijd kunt vinden.
+
+```sql
+create or replace procedure archive_data(table) as
+        $$
+        begin
+         --WIP
+        end;
+        $$ language 'plpgsql';
+```
+
 ## 2.
 
 > Schrijf een functie die drie getallen optelt en teruggeeft.
@@ -447,93 +458,210 @@ CREATE OR REPLACE FUNCTION public.kolom_overzicht ("tabel" TEXT)
 SELECT * FROM public.kolom_overzicht ('countries');
 ```
 
-# Oefeningen op Procedurele SQL Triggers
+## 7.
+
+> Schrijf een functie met dezelfde functionaliteit als een bestaande php functie uit je  
+> persoonlijk project.
+
+Huh, php? Nou meid daar doen we niet aan mee. Oké dan, laten we de php abs functie namaken.
+
+```php
+//abs(-2) geefts obvs 2
+abs(number);
+```
+
+Oké, nu met een procedurele functie!
+
+```sql
+CREATE OR REPLACE FUNCTION mijn_abs(num INT)
+        RETURNS INT AS
+        $$
+        BEGIN
+        IF num < 0 THEN
+        RETURN -num;
+        END IF;
+
+        RETURN num;
+        END;
+        $$
+        LANGUAGE 'plpgsql';
+
+--even testen
+select mijn_abs(-2);
+--res: 2
+```
+
+## 8.
+
+> Probeer 1 van de volgende aan te maken (je mag kiezen welke, maar je mag het nog niet  
+> gedaan hebben eg: table) : AGGREGATE, DATABASE, GROUP, OPERATOR,  
+> SEQUENCE, TRIGGER, USER, CAST, DOMAIN, INDEX, RULE,  
+> TABLE, TYPE, VIEW, CONVERSION, FUNCTION, LANGUAGE , SCHEMA,  
+> TEMP, UNIQUE  
+> Controleer nu of deze functie of een SQL functie is en niet postgresql specifiek.
+
+Wait... Bertels what have you been smoking? Nee echt, ik weet niet wat hij verwacht.  
+Ik dacht dat deze oefenreeks over procedurele functies ging...
+
+# Oefeningen op triggers
+
+Let's goooo.
 
 ## 1.
 
-> Create trigger that deletes 10 oldest fines when new fine will make total 
-number of fines raise above 50
+> Schrijf een functie waarbij je zinnige uitvoer probeert terug te geven naar gebruikers wanneer ze gegevens verkeerd/vergeten in voeren in een zelf gekozen tabel en zorg ervoor dat dit vanzelf gecontroleerd wordt.
 
 ```sql
-DROP TRIGGER IF EXISTS OEF_1 ON boetes;
-DROP FUNCTION IF EXISTS Remove10OldestFines();
-DROP TRIGGER IF EXISTS OEF_2 ON boetes;
-DROP FUNCTION IF EXISTS Prevent_High_Fines();
-DROP TRIGGER IF EXISTS OEF_3 ON boetes;
-DROP FUNCTION IF EXISTS ReturnInfoOnChange();
-
-CREATE FUNCTION OR REPLACE Remove10OldestFines() RETURNS trigger AS '
+CREATE OR REPLACE FUNCTION check_reservering() RETURNS TRIGGER AS
+$$
 BEGIN
-	IF(SELECT COUNT(*) > 50 FROM boetes) THEN
-		DELETE FROM boetes WHERE betalingsnr IN (SELECT betalingsnr FROM boetes 
-		ORDER BY datum ASC LIMIT 10);
-	END IF;
-	RETURN NEW;
-END
-'
+  IF( NEW.datum_aankomst > NEW.datum_vertrek ) THEN
+    RAISE EXCEPTION 'Aankomstdatum moet voor vertrekdatum liggen';
+  END IF;
+
+  RETURN NEW;
+END;
+$$
 LANGUAGE 'plpgsql';
 
-CREATE TRIGGER OEF_1 BEFORE INSERT ON boetes
-FOR EACH ROW EXECUTE PROCEDURE Remove10OldestFines();
-
-INSERT INTO boetes VALUES (1000,2,'2017-11-06', 100);
-INSERT INTO boetes VALUES (1001,2,'2017-11-06', 100);
-INSERT INTO boetes VALUES (1002,2,'2017-11-06', 100);
-INSERT INTO boetes VALUES (1003,2,'2017-11-06', 100);
-INSERT INTO boetes VALUES (1004,2,'2017-11-06', 100);
-INSERT INTO boetes VALUES (1005,2,'2017-11-06', 100);
+CREATE TRIGGER trigger_check_reservering
+  BEFORE INSERT OR UPDATE
+  ON reservering
+  FOR EACH ROW
+  EXECUTE PROCEDURE check_reservering();
 ```
 
+## 2.
 
-## 2. 
+> Zorg ervoor dat er een tabel met een simpele statistiek van een tabel van jouw project, namelijk het aantal inserts dat er reeds is op uitgevoerd.
 
-> Create trigger that prevents inserts of fines with an amount above 200 euros
+**bzzz... error occured when trying to translate bertelsiaans to human language... calculating possible solution...**
+
+Ik had dus voor IPMajor een user tabel. Deze query toont het aantal rij inserts op de user tabel.
 
 ```sql
-DROP TRIGGER IF EXISTS OEF_1 ON boetes;
-DROP FUNCTION IF EXISTS Remove10OldestFines();
-DROP TRIGGER IF EXISTS OEF_2 ON boetes;
-DROP FUNCTION IF EXISTS Prevent_High_Fines();
-DROP TRIGGER IF EXISTS OEF_3 ON boetes;
-DROP FUNCTION IF EXISTS ReturnInfoOnChange();
-
-CREATE OR REPLACE FUNCTION Prevent_High_Fines() RETURNS trigger AS '
-BEGIN
-	RETURN null;
-END
-'
-LANGUAGE 'plpgsql';
-
-CREATE TRIGGER OEF_2 BEFORE INSERT ON boetes
-FOR EACH ROW 
-WHEN (NEW.bedrag > 200)
-EXECUTE PROCEDURE Prevent_High_Fines();
-
-INSERT INTO boetes VALUES (1010,2,'2017-11-06', 100);
-INSERT INTO boetes VALUES (1011,2,'2017-11-06', 300);
-INSERT INTO boetes VALUES (1012,2,'2017-11-06', 100);
-INSERT INTO boetes VALUES (1013,2,'2017-11-06', 400);
-INSERT INTO boetes VALUES (1014,2,'2017-11-06', 100);
-INSERT INTO boetes VALUES (1015,2,'2017-11-06', 200);
-INSERT INTO boetes VALUES (1016,2,'2017-11-06', 300);
+select n_tup_ins
+from pg_stat_all_tables
+where schemaname = 'public' and relname = 'users'
 ```
 
 ## 3.
 
+> In welke situaties kan je een trigger schrijven?  
+> Bv bij een select die door een gebruiker word uitgevoerd?
+
+Bij elk soort database event kun je een trigger maken.
+In welke situaties? Bv als je bij een insert wilt nakijken of
+de parameters valide zijn. Bij een update kun je hetzelfde doen.
+
+Meer info: [postgresql_triggers](https://www.tutorialspoint.com/postgresql/postgresql_triggers.htm)
+
+## 4.
+
+> Schrijf een nuttige trigger op je eigen databank.
+
+Ik heb al constraints voor rating & views, maar ik kijk eigenlijk nooit na of een titel of
+beschrijving enkel uit nummers bestaat. Dus dit is een mooie oplossing daarvoor.
+
+```sql
+CREATE OR REPLACE FUNCTION check_novel() RETURNS TRIGGER AS
+$$
+BEGIN
+  IF( NEW.title ~ '^[0-9\.]+$') THEN
+    RAISE EXCEPTION 'Titel mag niet enkel uit nummers bestaan';
+  END IF;
+
+  IF( NEW.description ~ '^[0-9\.]+$') THEN
+    RAISE EXCEPTION 'Beschrijving mag niet enkel uit nummers bestaan';
+  END IF;
+
+  IF (NEW.rating < 0) THEN
+    RAISE EXCEPTION 'Rating mag niet kleiner dan nul zijn';
+  END IF;
+
+  IF (NEW.views < 0) THEN
+    RAISE EXCEPTION 'Views mag niet kleiner dan nul zijn';
+  END IF;
+
+  RETURN NEW;
+END;
+$$
+LANGUAGE 'plpgsql';
+
+CREATE TRIGGER trigger_check_novel
+  BEFORE INSERT OR UPDATE
+  ON novels
+  FOR EACH ROW
+  EXECUTE PROCEDURE check_novel();
+```
+
+## 5.
+
+> Create trigger that deletes 10 oldest fines when new fine will make total  
+> number of fines raise above 50
+
+```sql
+CREATE OR REPLACE FUNCTION delete_tien_oudste() RETURNS TRIGGER AS
+$$
+BEGIN
+    DELETE FROM tabel1
+    WHERE
+        (SELECT COUNT(*) FROM tabel1) > 50
+    AND
+        id IN (
+        SELECT id
+        FROM tabel1
+        ORDER BY id ASC
+        FETCH FIRST 10 ROWS ONLY
+    );
+    RETURN NULL;
+END;
+$$
+language 'plpgsql';
+
+CREATE TRIGGER delete_oudsten
+    AFTER INSERT
+    ON tabel1
+    FOR EACH ROW
+    EXECUTE PROCEDURE delete_tien_oudste();
+```
+
+## 6.
+
+> Create trigger that prevents inserts of fines with an amount above 200 euros
+
+```sql
+CREATE OR REPLACE FUNCTION check_fine() RETURNS TRIGGER AS
+$$
+BEGIN
+  IF( NEW.bedrag > 200) THEN
+    RAISE EXCEPTION 'Titel mag niet enkel uit nummers bestaan';
+  END IF;
+
+  RETURN NEW;
+END;
+$$
+LANGUAGE 'plpgsql';
+
+CREATE TRIGGER trigger_fine
+  BEFORE INSERT
+  ON boetes
+  FOR EACH ROW
+  EXECUTE PROCEDURE check_fine();
+```
+
+## 7.
+
 > Create trigger that returns actual total amount and number of fines whenever a new fine is inserted or an existing one is updated.
 
 ```sql
-DROP TRIGGER IF EXISTS OEF_1 ON boetes;
-DROP FUNCTION IF EXISTS Remove10OldestFines();
-DROP TRIGGER IF EXISTS OEF_2 ON boetes;
-DROP FUNCTION IF EXISTS Prevent_High_Fines();
 DROP TRIGGER IF EXISTS OEF_3 ON boetes;
 DROP FUNCTION IF EXISTS ReturnInfoOnChange();
 
 set client_min_messages TO notice;
 
-CREATE OR REPLACE FUNCTION ReturnInfoOnChange() RETURNS trigger AS 
-$body$
+CREATE OR REPLACE FUNCTION ReturnInfoOnChange() RETURNS trigger AS
+$$
 DECLARE
 	total_amount FLOAT;
 	nfines INTEGER;
@@ -543,11 +671,11 @@ BEGIN
 	RAISE NOTICE 'Total amount of fines: % and total number %', total_amount, nfines;
 	return new;
 END
-$body$
+$$
 LANGUAGE 'plpgsql';
 
 CREATE TRIGGER OEF_3 BEFORE INSERT OR UPDATE ON boetes
-FOR EACH ROW 
+FOR EACH ROW
 EXECUTE PROCEDURE ReturnInfoOnChange();
 
 INSERT INTO boetes VALUES (1110,2,'2017-11-06', 100);
@@ -556,10 +684,9 @@ INSERT INTO boetes VALUES (1210,2,'2017-11-06', 200);
 UPDATE boetes SET bedrag=300 WHERE betalingsnr = 1210;
 ```
 
-
 # Oefeningen op Views, Stored Procedures en Triggers
 
-## 1. 
+## 1.
 
 > Zoals je misschien herinnerd, kan het tellen van al de rijen soms langs duren. Dus het gebruik van de count() functie.Maak op je lokale databank een tabel met minstens 1 miljoen rijen.
 
@@ -571,6 +698,7 @@ CREATE TABLE items AS
   FROM
     generate_series(1,1000000);
 ```
+
 &rarr; doe daarna een count() op de tabel.
 
 ```sql
@@ -579,7 +707,7 @@ SELECT COUNT(*) FROM items;
 
 ## 2.
 
-> Maak een view waarin de rijen van deze tabel telt. Hoe kan je ervoor zorgen dat deze view niet steeds opnieuw moet worden uitgevoerd, ie de onderliggende code. 
+> Maak een view waarin de rijen van deze tabel telt. Hoe kan je ervoor zorgen dat deze view niet steeds opnieuw moet worden uitgevoerd, ie de onderliggende code.
 > Maak zo een view aan.
 
 ```sql
@@ -602,7 +730,7 @@ create view locatie as select locid as locid,
 CREATE OR REPLACE FUNCTION increment_count() RETURNS TRIGGER AS
 $$
 BEGIN
-  UPDATE count 
+  UPDATE count
   SET count = count + 1
   WHERE table_name = 'items';
   RETURN NEW;
@@ -628,7 +756,7 @@ OVER
         PARTITION BY r.reisnr
         ORDER BY b.volgnr ROWS BETWEEN UNBOUNDED
         PRECEDING AND current ROW
-) 
+)
 AS inc_duur, (SELECT SUM(bezoeken.verblijfsduur) FROM bezoeken) AS tot_duur
 FROM reizen r
 LEFT OUTER JOIN bezoeken b USING(reisnr)
@@ -648,4 +776,3 @@ FROM reizen
 WINDOW w1 AS (ORDER BY vertrekdatum), w2 AS (PARTITION BY EXTRACT(YEAR FROM vertrekdatum) ORDER BY vertrekdatum)
 ORDER BY 1
 ```
-
