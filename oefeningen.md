@@ -505,6 +505,15 @@ Ik dacht dat deze oefenreeks over procedurele functies ging...
 
 # Oefeningen op triggers
 
+Before we go: met deze query kun je alle triggers oplijsten.
+
+```sql
+SELECT event_object_table AS table_name, trigger_name
+FROM information_schema.triggers
+GROUP BY table_name, trigger_name
+ORDER BY table_name, trigger_name
+```
+
 Let's goooo.
 
 ## 1.
