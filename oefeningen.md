@@ -793,3 +793,128 @@ FROM reizen
 WINDOW w1 AS (ORDER BY vertrekdatum), w2 AS (PARTITION BY EXTRACT(YEAR FROM vertrekdatum) ORDER BY vertrekdatum)
 ORDER BY 1
 ```
+
+# Oefeningen op CTEs
+
+## 1.
+
+> Kijk naar de structuur van de tabel hemelobjecten in het schema public en naar dezelfde tabel in  
+> het schema ruimtereizen. Wat merk je op?
+
+Er zijn 2 FKs die verwijzen naar dezelfde kolom hemelobjecten(objectnaam) in het public schema.
+Je kunt dus best één van de 2 verwijderen door een alter table query uit te voeren.
+
+## 2.
+
+> Geef de gepaste code waarmee je de tabel hemelobjecten in ruimtereizen 'beter' kan maken.
+
+```sql
+ALTER TABLE hemelobjecten
+ ADD CONSTRAINT hemelobjecten_hier_fk
+ FOREIGN KEY (satellietvan) REFERENCES hemelobjecten(objectnaam)
+ NOT VALID;
+
+ALTER TABLE hemelobjecten
+ VALIDATE CONSTRAINT hemelobjecten_hier_fk;
+```
+
+## 3.
+
+> Er zijn twee (of meer..) manieren om deze tabel 'beter' te maken, met hetzelfde eindresultaat.  
+> Welke van deze twee manieren zou jij kiezen en waarom?
+
+Je hebt de optie hierboven, voordeel: sneller, nadeel: pas consistent (ref integriteit) voor de reeds aanwezige
+data na validatie.
+--1. NOT VALID en daarna VALIDATE (supra)
+--2. of samen in 1 statement? (infra)
+--En de optie hieronder, nadeel: trager, voordeel: huidige integriteit wordt direct gecontroleerd met betrekking
+tot deze constraint
+
+```sql
+ALTER TABLE hemelobjecten
+ ADD CONSTRAINT hemelobjecten_hier_fk
+ FOREIGN KEY (satellietvan) REFERENCES hemelobjecten(objectnaam);
+```
+
+## 4.
+
+### 1 - 3.
+
+Zijn useless deel oefeningen, skip.
+
+### 4.
+
+> Schrijf een querie die alle satellieten van een zelf gekozen hemelobject toont. (bv de zon  
+> indien aanwezig in de tabel). Zorg ervoor dat de hele hierarchie wordt getoond. (cf CTEs)
+
+```sql
+WITH RECURSIVE satellieten AS(
+ SELECT objectnaam, satellietvan
+ FROM hemelobjecten
+ WHERE satellietvan = 'Zon'
+ UNION ALL
+ SELECT h.objectnaam, h.satellietvan
+ FROM hemelobjecten h INNER JOIN satellieten s
+ ON (h.satellietvan = s.objectnaam)
+)
+SELECT *
+FROM satellieten
+ORDER BY 1,2;
+```
+
+### 5.
+
+> Toon de boomstructuur voor elk hemelobject uit de vorige querie.
+
+```sql
+WITH RECURSIVE satelliet_van(objectnaam, satellietvan, boom) AS (
+SELECT objectnaam, satellietvan, cast(satellietvan as text)
+FROM hemelobjecten
+WHERE satellietvan = 'Zon'
+ UNION ALL
+SELECT h.objectnaam, h.satellietvan, s.boom || '-' || h.satellietvan
+FROM hemelobjecten h, satelliet_van s
+WHERE h.satellietvan = s.objectnaam
+)
+SELECT *
+FROM satelliet_van;
+```
+
+### 6 - 7.
+
+Zijn bullshit oefeningen. Enkel de constraint vraag uit 7 is nuttig.
+
+> Begrijp je wat onderstaande code betekent?  
+> CONSTRAINT bezoeken_objectnaam_fkey FOREIGN KEY (objectnaam)  
+> REFERENCES ruimtereizen.hemelobjecten (objectnaam) MATCH SIMPLE  
+> ON UPDATE NO ACTION ON DELETE NO ACTION
+
+Met deze code maak je een FK aan op bezoeken zijn objectnaam kolom aan die een referentie is naar
+de pk van hemelobjecten objectnaam kolom.
+
+Bij MATCH SIMPLE vond ik het volgende online:
+
+> MATCH SIMPLE allows any of the foreign key columns to be null; if any of them are null, the row is not required to have a match in the referenced table.
+
+ON UPDATE: doe niks wnr de overéénkomende row in hemelobjecten geupdate wordt.
+
+ON DELETE: doe niks wnr de overéénkomende row in hemelobjecten verwijderd wordt.
+
+### 8.
+
+Zo kun je recursief door hemelobjecten en hun satellieten gaan zonder lus!
+
+```sql
+WITH RECURSIVE satelliet_van(objectnaam, satellietvan, pad, lus) AS (
+SELECT objectnaam, satellietvan, ARRAY[satellietvan] as pad, false
+FROM hemelobjecten
+WHERE satellietvan = 'Zon'
+ UNION ALL
+SELECT h.objectnaam, h.satellietvan, CAST(s.pad || ARRAY[h.satellietvan] as varchar(10)[]) as pad, h.satellietvan = ANY(pad)
+FROM hemelobjecten h, satelliet_van s
+WHERE h.satellietvan = s.objectnaam
+AND NOT lus
+)
+SELECT *
+FROM satelliet_van;
+```
