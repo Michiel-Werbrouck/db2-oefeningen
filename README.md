@@ -5,6 +5,7 @@ Verzameling van opgeloste DB2 oefeningen uit projektwerk.
 **Zie je een fout? Pull request!**
 
 Neem op tijd pauze!
+
 ![MicroPauze](Images/micropauze.png)
 
 ## Quickstart using Docker
