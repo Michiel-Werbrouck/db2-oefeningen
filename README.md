@@ -1,7 +1,11 @@
 # db2-oefeningen
-Verzameling van opgeloste DB2 oefeningen uit projektwerk. 
+
+Verzameling van opgeloste DB2 oefeningen uit projektwerk.
 
 **Zie je een fout? Pull request!**
+
+Neem op tijd pauze!
+![MicroPauze](Images/micropauze.png)
 
 ## Quickstart using Docker
 
@@ -20,8 +24,7 @@ Dankzij de volume mount verlies je geen data on shutdown.
 
 ### Zonder docker-compose
 
->Dit is met binds, dus je container kan aan je host files! Wees zeker dat je de bind aanpast naar een bestaande directory.
-
+> Dit is met binds, dus je container kan aan je host files! Wees zeker dat je de bind aanpast naar een bestaande directory.
 
 ```console
 $ docker run -d \

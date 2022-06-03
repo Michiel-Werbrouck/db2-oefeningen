@@ -923,3 +923,131 @@ AND NOT lus
 SELECT *
 FROM satelliet_van;
 ```
+
+# Oefeningen op ORDBMS
+
+## 1.
+
+> Hoe creëer je op de server van het school zelf een type om bv adressen te bevatten. Gaat dit?
+
+```sql
+CREATE TYPE adres AS
+(straat varchar(30),
+nummer smallint,
+gemeente varchar(30),
+postnummer smallint
+);
+```
+
+## 2.
+
+> Hoe maak je in postgresql een rij-object? Moet je dit expliciet doen? Bestaat er zoiets als  
+> een collectie in postgresql (analoog aan vector/verzameling)?
+
+Gebruik [] om van een bestaand type een rij-type te maken.  
+Bv integer[]  
+Bij deze rijen is het aantal elementen niet beperkt, een verzameling (ahw een  
+ongeordende rij) bestaat niet. Maar je kan wel functies schrijven die een set of output  
+geven (verzameling).
+
+## 3.
+
+> Kan je in postgresql een tabel laten overerven van een andere tabel? Zoja, probeer dit op een  
+> eigen tabel met een extra attribuut 'omschrijving'.
+
+```sql
+CREATE TABLE cities (
+  name       text,
+  population real,
+  altitude   int     -- (in ft)
+);
+
+CREATE TABLE capitals (
+  omschrijving      text,
+) INHERITS (cities);
+```
+
+## 4.
+
+> Welke drie verschillende soorten queries kan op de tabel(len) uit de vorige vraag uitvoeren?  
+> (maw welke data kan je allemaal ondervragen, welke drie mogelijke groepen kan je hierin  
+> zien, maak misschien een grafische voorstelling van de tabel+overgeerfde tabel.) Hoe doe je  
+> dit in postgresql?
+
+```sql
+SELECT name, altitude
+FROM cities
+WHERE altitude > 500;
+
+SELECT name, altitude
+FROM ONLY cities
+WHERE altitude > 500;
+
+SELECT p.relname, c.name, c.altitude
+FROM cities c, pg_class p
+WHERE c.altitude > 500 and c.tableoid = p.oid;
+```
+
+**Info over pg_class**
+
+> The catalog pg_class catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind. Below, when we mean all of these kinds of objects we speak of “relations”. Not all columns are meaningful for all relation types.
+
+## 5.
+
+> Schrijf zelf een casting functie die enkel de eerste twee tekens teruggeeft van een waarde.
+
+```sql
+DROP FUNCTION firsttwo(t bytea);
+CREATE OR REPLACE FUNCTION firstTwo(t bytea) RETURNS char(2) AS $$
+BEGIN
+RETURN substring(t from 1 for 2);
+ END;
+$$ LANGUAGE plpgsql;
+CREATE CAST (bytea AS char(2)) WITH FUNCTION firstTwo(bytea);
+```
+
+## 6.
+
+> Wat zijn de unieke rijnummers in postgresql? Kan je deze in een query gebruiken?
+
+(tableoid  
+The OID of the table containing this row. This column is particularly handy  
+for queries that select from inheritance hierarchies (see Section 5.8), since without it,  
+it's difficult to tell which individual table a row came from. The tableoid can be  
+joined against the oid column of pg_class to obtain the table name.)
+
+```sql
+SELECT * FROM pg_attribute WHERE attrelid = 'bezoeken'::regclass;
+```
+
+## 7.
+
+> Hoe kan je in postgresql een databank maken met de structuur van een reeds bestaande  
+> databank? Hoe doe je hetzelfde voor 1 van je eigen gemaakte tabellen? Kan je zowel een  
+> kopie maken wat betreft structuur als inhoud? Wat is er mogelijk in postgresql?
+
+Je kunt een sql-dump maken van de database om later deze code op een (andere) server te
+lanceren.
+
+Je kunt ook gebruik maken van templates.
+
+```sql
+CREATE DATABASE name
+    [ [ WITH ] [ OWNER [=] dbowner ]
+           [ TEMPLATE [=] template ]
+           [ ENCODING [=] encoding ]
+           [ TABLESPACE [=] tablespace ]
+           [ CONNECTION LIMIT [=] connlimit ] ]
+```
+
+zo bijvoorbeeld:
+
+```sql
+CREATE DATABASE mijn_db TEMPLATE template0;
+```
+
+## 8.
+
+> Waarom staat er nu helaas vaak bij: postgresql?
+
+Waarom zijn deze vragen helaas vaak niet te begrijpen?
