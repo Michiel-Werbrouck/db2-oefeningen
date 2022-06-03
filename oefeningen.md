@@ -1119,3 +1119,47 @@ Really Simple Syndication, een familie van webfeedformaten.
 > Heb je een speciale editor nodig voor xml? Zo ja, geef enkele voorbeelden.
 
 Speciale editor? Bruh. Ge kunt gwn notepad gebruiken als ge echt ne player zijt.
+
+# Oefening van Replicatie
+
+Zorg er eerst voor dat je kunt replicaten...
+
+Voer dit uit op fuji!
+
+```sql
+SELECT user_administration.get_replication();
+```
+
+Stap 1 is een backup maken van chinook op je lokale db, [bekijk de martijn guide hiervoor](https://github.com/martijnmeeldijk/TI-oplossingen/blob/master/Semester_4/DB2/DB2-Labos/hoe_maak_ik_een_lokale_databank.md)
+
+Daarna moet je jezelf inschrijven op db2_sub
+
+```sql
+CREATE SUBSCRIPTION db2_sub_vervangdit
+CONNECTION 'dbname=db2 host=fuji.ucll.be user=[rnummer]
+ port=52122 password=[paswoord] sslmode=require' PUBLICATION db2_pub;
+```
+
+Nu moet je dit uitvoeren op fuji om te kijken of je subscriptie aangemaakt is
+
+```sql
+SELECT * FROM pg_replication_slots;
+--zoek naa de sub naam die je zelf gekozen hebt in de query resultaten
+```
+
+Volgende stap is vies ez, ga naar de db2 database van fuji en voeg bv een nieuwe artiest toe
+
+```sql
+--deze coole naam en id zijn al ingenomen door de enige echte.
+insert into chinook."Artist" values (420, 'The_Real_MikeWe_UwU');
+```
+
+Nu gaan we een banger van een Album releasen boys.
+
+```sql
+insert into chinook."Album" values (6969, 'CiscoDisco', 420);
+```
+
+Als je nu een select query doet op je lokale db zou je ze moeten zien staan!
+
+![MijnAlbum](Images/greatest.jpg)
