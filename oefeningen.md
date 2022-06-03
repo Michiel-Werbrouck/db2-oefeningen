@@ -1144,7 +1144,7 @@ Nu moet je dit uitvoeren op fuji om te kijken of je subscriptie aangemaakt is
 
 ```sql
 SELECT * FROM pg_replication_slots;
---zoek naa de sub naam die je zelf gekozen hebt in de query resultaten
+--zoek naar de sub naam die je zelf gekozen hebt in de query resultaten
 ```
 
 Volgende stap is vies ez, ga naar de db2 database van fuji en voeg bv een nieuwe artiest toe
