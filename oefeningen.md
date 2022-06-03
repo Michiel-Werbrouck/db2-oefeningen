@@ -367,16 +367,21 @@ Alright, with that said... let's go.
 > Schrijf een functie waarbij je gegevens uit een transactie tabel verwijdert die ouder zijn dan  
 > 10 dagen (of een andere “archiverings” functie op 1 van jou eigen tabellen).
 
-Ik denk dat dit een procedure moet zijn omdat je gegevens gaat verwijderen, maar ik vind nergens info over hoe je een row z'n leeftijd kunt vinden.
+Ik denk dat dit een procedure moet zijn omdat je gegevens gaat verwijderen.
 
 ```sql
-create or replace procedure archive_data(table) as
-        $$
-        begin
-         --WIP
-        end;
-        $$ language 'plpgsql';
+create or replace procedure delete_items_older_than_10days()
+$$
+    begin
+        delete from messages
+        where 10 < (select current_date-datum);
+    end
+$$ language 'plpgsql'
+
+call delete_items_older_than_10days()
 ```
+
+_Credits go to a certain dog_
 
 ## 2.
 
