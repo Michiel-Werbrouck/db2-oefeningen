@@ -1051,3 +1051,71 @@ CREATE DATABASE mijn_db TEMPLATE template0;
 > Waarom staat er nu helaas vaak bij: postgresql?
 
 Waarom zijn deze vragen helaas vaak niet te begrijpen?
+
+![MicroPauze](Images/pauzetijd.png)
+
+# Oefeningen op XML
+
+Is dit zelfs nodig? Oh well, here we go.
+
+![XMLmeme](Images/xmlmeme.jpg)
+
+## 1.
+
+> Bestaat er zoiets als character sets in xml? Ja/nee, leg uit.
+
+Ja, bv UTF-8, UTF-16
+
+Meer info: [XML Charsets](https://docstore.mik.ua/orelly/xml/xmlnut/ch26_01.htm#:~:text=Character%20set%20names%20defined%20by%20the%20XML%201.0%20specification&text=The%20default%20encoding%20used%20in,to%20six%20bytes%20per%20character.)
+
+## 2.
+
+> Hernoem dit document naar een .zip bestand. Open nu dit document, wat zie je en wat kan je  
+> hieruit afleiden?
+
+Als ik het probeer te openen krijg ik een error. Als ik het open met notepad krijg ik de zip markup language (.odt) te zien waar
+de structuur van de zip gedefinieerd wordt.
+
+## 3.
+
+> Hoe heet het sql van de xml? Is dit ook een iso-standaard?
+
+ODT = Open Document Text en ja het is een ISO-Standaard.
+
+## 4.
+
+> Kies 1 tabel van jouw persoonlijk project en maak een overeenkomstig document dat
+> minstens de eerste twee records/instanties van die tabel bevat.
+
+```sql
+--zo
+SELECT table_to_xml('users', false, true, '');
+--of zo
+SELECT query_to_xml('SELECT * FROM users', false, true, '');
+```
+
+## 5.
+
+> Geef een bestandsformaat gebaseerd op xml dat tevens een isostandaard is.
+
+YAML
+
+## 6.
+
+> Waarvoor staat svg en geef een programma dat dit gebruikt.
+
+Scalable Vector Graphics.
+
+Adobe Illustrator
+
+## 7.
+
+> Wat is rss?
+
+Really Simple Syndication, een familie van webfeedformaten.
+
+## 8.
+
+> Heb je een speciale editor nodig voor xml? Zo ja, geef enkele voorbeelden.
+
+Speciale editor? Bruh. Ge kunt gwn notepad gebruiken als ge echt ne player zijt.
