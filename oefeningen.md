@@ -370,7 +370,7 @@ Alright, with that said... let's go.
 Ik denk dat dit een procedure moet zijn omdat je gegevens gaat verwijderen.
 
 ```sql
-create or replace procedure delete_items_older_than_10days()
+create or replace procedure delete_items_older_than_10days() AS
 $$
     begin
         delete from messages
