@@ -12,7 +12,9 @@ IMMUTABLE
 --BUT its result could change across SQL statements. Bv current_timestamp() omdat  de waarden niet veranderen binnen een transactie
 STABLE
 
---self-explantory I guess, denk aan random(), timeofday(), currval(). Letterlijk elke functie die bijwerkingen heeft, zelfs al zijn ze voorspelbaar moeten gecached worden als volatile!
+--self-explantory I guess, denk aan random(), timeofday(), currval().
+--Letterlijk elke functie die bijwerkingen heeft,
+--zelfs al zijn ze voorspelbaar moeten gecached worden als volatile!
 --ge kunt ze dus ook niet optimaliseren
 VOLATILE
 ```
