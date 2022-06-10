@@ -147,9 +147,6 @@ ROWS est_num_rows
 
 ## Beastmaster Examples
 
-"Give me a class of procrastinating students, a md file and an hour and I'll make them pass db2" > Dhr. Michiel Werbrouck 2022 (één dag voor het befaamde db2 examen)
-_side note: imagine da ik nu kkr hard buis en de rest is door lmao_
-
 ```sql
 CREATE OR REPLACE FUNCTION fn_test(param_arg1 integer, param_arg2 text)
   RETURNS text AS
